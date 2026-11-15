@@ -42,7 +42,7 @@ http.createServer(async (q, s) => {
   }
   if (u === '/main.lua') { // tự điền địa chỉ server vào script
     const proto = q.headers['x-forwarded-proto'] || 'http';
-    const lua = fs.readFileSync(path.join(__dirname, 'main.lua'), 'utf8').replace('__SERVER__', proto + '://' + q.headers.host);
+    const lua = fs.readFileSync(path.join(__dirname, 'main.lua'), 'utf8').replace('%%SERVER_URL%%', proto + '://' + q.headers.host);
     return send(s, 200, 'text/plain', lua);
   }
   send(s, 200, 'text/html', fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8'));

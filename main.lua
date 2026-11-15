@@ -1,11 +1,11 @@
--- Anime Adventures tracker. Server tự điền __SERVER__.
+-- Anime Adventures tracker. Server tự điền địa chỉ web vào biến SERVER.
 local S = getgenv().Track_Settings or getgenv().Hermanos_Settings or {}
 local RUN_ID = tick()
 getgenv().__TRK_RUN = RUN_ID -- chạy lại script sẽ thay thế vòng lặp cũ
 
-local SERVER = "__SERVER__"
+local SERVER = "%%SERVER_URL%%"
 local function log(...) print("[TRACK]", ...) end
-if SERVER:find("__SERVER__") then
+if SERVER:sub(1, 2) == "%%" then
     return warn("[TRACK] Sai cách chạy: phải chạy bằng loadstring(game:HttpGet('https://domain/main.lua')), không dán trực tiếp file main.lua.")
 end
 if not S.key or S.key == "" or S.key == "KEY_CỦA_BẠN" then

@@ -3,7 +3,7 @@ local S = getgenv().Track_Settings or getgenv().Hermanos_Settings or {}
 local RUN_ID = tick()
 getgenv().__TRK_RUN = RUN_ID -- chạy lại script sẽ thay thế vòng lặp cũ
 
-local SERVER = "%%SERVER_URL%%"
+local SERVER = "https://trackstat-xzvf.onrender.com"
 local function log(...) print("[TRACK]", ...) end
 if SERVER:sub(1, 2) == "%%" then
     return warn("[TRACK] Sai cách chạy: phải chạy bằng loadstring(game:HttpGet('https://domain/main.lua')), không dán trực tiếp file main.lua.")

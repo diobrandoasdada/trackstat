@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070b12">
+<title>TrackStat · Anime Adventures Monitor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070b12; --bg2:#0b1220; --panel:rgba(18,25,39,.78); --panel2:rgba(24,33,51,.72);
+  --line:rgba(148,163,184,.14); --line2:rgba(148,163,184,.24);
+  --text:#e8eef9; --muted:#8fa0b9; --dim:#64748b;
+  --cyan:#38bdf8; --violet:#a78bfa; --green:#34d399; --amber:#fbbf24; --red:#fb7185;
+  --shadow:0 18px 50px rgba(0,0,0,.45);
+  --r:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; min-height:100vh; color:var(--text); background:var(--bg);
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:14px; line-height:1.5; overflow-x:hidden;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(900px 520px at 12% -8%,rgba(56,189,248,.16),transparent 60%),
+    radial-gradient(760px 520px at 88% 0%,rgba(167,139,250,.16),transparent 60%),
+    radial-gradient(700px 500px at 50% 100%,rgba(52,211,153,.07),transparent 65%),
+    linear-gradient(180deg,#080d16 0%,#070b12 45%,#060910 100%);
+}
+body::after{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none; opacity:.035;
+  background-image:linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px);
+  background-size:44px 44px;
+  mask-image:linear-gradient(to bottom,black,transparent 75%);
+}
+button,input,select{font:inherit}
+button{cursor:pointer}
+a{color:inherit}
+.app{max-width:1480px;margin:0 auto;padding:20px 24px 60px}
+
+/* topbar */
+.topbar{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:12px 16px;margin-bottom:20px;border:1px solid var(--line);border-radius:var(--r);
+  background:linear-gradient(180deg,rgba(20,28,44,.86),rgba(13,19,31,.82));
+  backdrop-filter:blur(18px);box-shadow:var(--shadow);position:sticky;top:12px;z-index:30;
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:220px}
+.brand-mark{
+  width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;
+  background:linear-gradient(135deg,var(--cyan),var(--violet));color:#04101b;font-weight:800;font-size:15px;
+  box-shadow:0 8px 24px rgba(56,189,248,.28);letter-spacing:-.5px;
+}
+.brand h1{margin:0;font-size:17px;letter-spacing:-.3px;font-weight:800}
+.brand p{margin:1px 0 0;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase;font-weight:600}
+.topbar-spacer{flex:1}
+.status-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:999px;
+  border:1px solid var(--line2);background:rgba(15,23,38,.8);font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;
+}
+.status-pill i,.status i,.dot{width:8px;height:8px;border-radius:50%;background:var(--dim);flex:none;display:inline-block}
+.status-pill.live{border-color:rgba(52,211,153,.35);color:#b9f5dd;background:rgba(52,211,153,.09)}
+.status-pill.live i{background:var(--green);box-shadow:0 0 0 4px rgba(52,211,153,.14);animation:pulse 1.8s infinite}
+.status-pill.err{border-color:rgba(251,113,133,.35);color:#ffd4dc;background:rgba(251,113,133,.09)}
+.status-pill.err i{background:var(--red)}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(52,211,153,0)}}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:1px solid var(--line2);background:rgba(30,41,59,.6);color:var(--text);
+  padding:9px 13px;border-radius:11px;font-size:12px;font-weight:650;transition:.18s ease;white-space:nowrap;
+}
+.btn:hover{border-color:rgba(56,189,248,.5);background:rgba(56,189,248,.1);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(135deg,rgba(56,189,248,.95),rgba(99,102,241,.95));border-color:transparent;color:#04101b;font-weight:800}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent}
+.btn.loading svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* hero */
+.hero{
+  position:relative;overflow:hidden;border:1px solid var(--line);border-radius:22px;padding:22px 24px;margin-bottom:22px;
+  background:linear-gradient(125deg,rgba(23,33,52,.9),rgba(13,19,31,.82) 55%,rgba(24,20,48,.86));
+  box-shadow:var(--shadow);
+}
+.hero::before{content:"";position:absolute;width:340px;height:340px;right:-90px;top:-180px;border-radius:50%;background:rgba(167,139,250,.16);filter:blur(20px)}
+.hero::after{content:"";position:absolute;width:280px;height:280px;left:-110px;bottom:-190px;border-radius:50%;background:rgba(56,189,248,.12);filter:blur(20px)}
+.hero-inner{position:relative;z-index:1;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.eyebrow{color:var(--cyan);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;margin-bottom:6px}
+.hero h2{margin:0;font-size:24px;letter-spacing:-.6px;font-weight:800}
+.hero p{margin:7px 0 0;color:var(--muted);max-width:620px;font-size:13px}
+.hero-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:10px;font-size:11px;font-weight:650;
+  border:1px solid var(--line2);background:rgba(8,13,22,.65);color:var(--muted);
+}
+.chip.good{border-color:rgba(52,211,153,.3);color:#b9f5dd;background:rgba(52,211,153,.08)}
+.chip.warn{border-color:rgba(251,191,36,.3);color:#ffe8ad;background:rgba(251,191,36,.08)}
+.chip b{color:var(--text);font-family:"JetBrains Mono",monospace;font-weight:600}
+
+/* stat cards */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(186px,1fr));gap:12px;margin-top:20px;position:relative;z-index:1}
+.stat-card{
+  padding:15px;border:1px solid var(--line);border-radius:15px;
+  background:linear-gradient(180deg,rgba(30,41,59,.6),rgba(14,21,34,.62));min-height:112px;
+  transition:.2s ease;
+}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--line2)}
+.stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.stat-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.18)}
+.stat-card:nth-child(2) .stat-icon{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.18)}
+.stat-card:nth-child(3) .stat-icon{background:rgba(251,191,36,.1);border-color:rgba(251,191,36,.18)}
+.stat-card:nth-child(4) .stat-icon{background:rgba(52,211,153,.1);border-color:rgba(52,211,153,.18)}
+.stat-card:nth-child(5) .stat-icon{background:rgba(244,114,182,.1);border-color:rgba(244,114,182,.18)}
+.stat-card:nth-child(6) .stat-icon{background:rgba(148,163,184,.1);border-color:rgba(148,163,184,.18)}
+.stat-trend{font-size:10px;color:var(--dim);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.stat-value{font-size:25px;font-weight:800;letter-spacing:-.8px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat-label{color:var(--muted);font-size:12px;margin-top:5px}
+
+/* sections */
+.section{margin-top:28px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+.section-head h2{margin:0;font-size:18px;letter-spacing:-.35px;font-weight:800}
+.section-head p{margin:5px 0 0;color:var(--muted);font-size:12px}
+.panel{border:1px solid var(--line);border-radius:var(--r);background:linear-gradient(180deg,rgba(20,28,44,.82),rgba(12,18,29,.82));box-shadow:var(--shadow);backdrop-filter:blur(14px)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;border-bottom:1px solid var(--line)}
+.panel-head h3{margin:0;font-size:14px;font-weight:750;display:flex;align-items:center;gap:9px}
+.panel-head h3 .mark{width:7px;height:18px;border-radius:4px;background:linear-gradient(var(--cyan),var(--violet));display:inline-block}
+.panel-sub{color:var(--muted);font-size:11px}
+.monitor-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:16px}
+@media(max-width:1050px){.monitor-grid{grid-template-columns:1fr}}
+
+/* item monitor */
+.item-tools{display:flex;align-items:center;gap:8px}
+.mini-input{
+  background:rgba(8,13,22,.7);border:1px solid var(--line2);color:var(--text);border-radius:9px;
+  padding:7px 10px;font-size:11px;width:160px;outline:none;
+}
+.mini-input:focus{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 3px rgba(56,189,248,.08)}
+.item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;padding:14px}
+.item-card{
+  text-align:left;border:1px solid var(--line);border-radius:13px;padding:12px;color:inherit;
+  background:linear-gradient(160deg,rgba(30,41,59,.66),rgba(13,20,32,.7));transition:.18s ease;position:relative;overflow:hidden;
+}
+.item-card:hover{transform:translateY(-2px);border-color:rgba(56,189,248,.38);background:linear-gradient(160deg,rgba(38,52,76,.8),rgba(16,24,38,.8))}
+.item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.item-icon{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:rgba(148,163,184,.09);border:1px solid var(--line);font-size:16px}
+.item-badge{font-size:10px;color:var(--muted);font-weight:650}
+.item-name{font-weight:700;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
+.item-total{font-size:19px;font-weight:800;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+.item-total span{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:0}
+.bar{height:5px;border-radius:99px;background:rgba(148,163,184,.12);overflow:hidden;margin:9px 0 7px}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+.item-foot{font-size:10px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* pc monitor */
+.pc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(255px,1fr));gap:10px;padding:14px}
+.pc-card{border:1px solid var(--line);border-radius:13px;padding:12px;background:linear-gradient(160deg,rgba(30,41,59,.6),rgba(13,20,32,.7))}
+.pc-head{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+.pc-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.18);font-size:16px}
+.pc-head h4{margin:0;font-size:13px;font-weight:750;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px}
+.pc-head p{margin:1px 0 0;font-size:10px;color:var(--muted)}
+.pc-head .mini{margin-left:auto;padding:5px 8px;font-size:10px;border-radius:8px;border:1px solid var(--line2);background:rgba(8,13,22,.6);color:var(--muted)}
+.pc-head .mini:hover{color:var(--cyan);border-color:rgba(56,189,248,.4)}
+.pc-accounts{display:flex;flex-direction:column;gap:6px}
+.account-chip{
+  display:flex;align-items:center;gap:9px;width:100%;text-align:left;border:1px solid transparent;border-radius:10px;
+  padding:6px 7px;background:rgba(8,13,22,.45);color:inherit;transition:.15s ease;
+}
+.account-chip:hover{border-color:var(--line2);background:rgba(30,41,59,.65)}
+.avatar{
+  width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:none;
+  background:linear-gradient(135deg,rgba(56,189,248,.28),rgba(167,139,250,.28));border:1px solid rgba(255,255,255,.08);
+  font-size:10px;font-weight:800;text-transform:uppercase;
+}
+.chip-main{min-width:0;flex:1}
+.chip-main b{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip-main small{display:block;color:var(--muted);font-size:10px;font-variant-numeric:tabular-nums}
+.account-chip .dot{width:6px;height:6px}
+.account-chip.is-online .dot{background:var(--green);box-shadow:0 0 0 3px rgba(52,211,153,.12)}
+.more-btn{margin-top:8px;width:100%;padding:6px;border-radius:9px;border:1px dashed var(--line2);background:transparent;color:var(--muted);font-size:10px}
+.more-btn:hover{color:var(--cyan);border-color:rgba(56,189,248,.4)}
+
+/* table */
+.table-tools{display:flex;gap:9px;flex-wrap:wrap;align-items:center;padding:13px 15px;border-bottom:1px solid var(--line)}
+.search-wrap{position:relative;flex:1;min-width:220px}
+.search-wrap svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);opacity:.55}
+.input,.select{
+  width:100%;background:rgba(8,13,22,.72);border:1px solid var(--line2);color:var(--text);
+  border-radius:10px;padding:9px 11px;font-size:12px;outline:none;
+}
+.search-wrap .input{padding-left:34px}
+.input:focus,.select:focus{border-color:rgba(56,189,248,.55);box-shadow:0 0 0 3px rgba(56,189,248,.08)}
+.select{width:auto;min-width:128px;cursor:pointer}
+.select option{background:#101827;color:var(--text)}
+.table-wrap{overflow:auto;max-height:620px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{
+  position:sticky;top:0;z-index:2;text-align:left;padding:11px 14px;background:rgba(11,17,28,.95);backdrop-filter:blur(8px);
+  color:var(--muted);font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.07em;white-space:nowrap;
+}
+tbody td{padding:11px 14px;border-top:1px solid rgba(148,163,184,.08);white-space:nowrap;font-variant-numeric:tabular-nums}
+tbody tr{cursor:pointer;transition:background .14s ease}
+tbody tr:hover{background:rgba(56,189,248,.05)}
+.user-cell{display:flex;align-items:center;gap:10px}
+.user-cell b{font-size:12px}
+.user-cell small{display:block;color:var(--dim);font-size:10px;font-family:"JetBrains Mono",monospace}
+.pc-tag{display:inline-block;padding:4px 8px;border-radius:7px;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.16);color:#d8ccff;font-size:10px;font-weight:700}
+.status{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:650;color:var(--dim)}
+.status.on{color:#a7f3d0}.status.on i{background:var(--green);box-shadow:0 0 0 3px rgba(52,211,153,.12)}
+.status small{display:block;font-size:10px;color:var(--dim);font-weight:500}
+.icon-btn{width:28px;height:28px;border-radius:8px;border:1px solid var(--line2);background:rgba(8,13,22,.6);color:var(--muted);display:grid;place-items:center;font-size:16px}
+.icon-btn:hover{color:var(--cyan);border-color:rgba(56,189,248,.45)}
+.empty{padding:48px 20px;text-align:center;color:var(--muted)}
+.empty b{display:block;color:var(--text);font-size:14px;margin-bottom:5px}
+
+/* modal */
+.modal-backdrop{
+  position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:22px;
+  background:rgba(3,6,12,.76);backdrop-filter:blur(8px);
+}
+.modal-backdrop.open{display:flex;animation:fade .18s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  width:min(940px,100%);max-height:88vh;overflow:hidden;display:flex;flex-direction:column;
+  border:1px solid var(--line2);border-radius:20px;background:linear-gradient(180deg,#101827,#0a101b);
+  box-shadow:0 30px 90px rgba(0,0,0,.7);animation:rise .22s ease;
+}
+@keyframes rise{from{transform:translateY(14px) scale(.99);opacity:.5}to{transform:none;opacity:1}}
+.modal-head{display:flex;align-items:flex-start;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.modal-head .avatar{width:44px;height:44px;border-radius:13px;font-size:14px}
+.modal-title{flex:1;min-width:0}
+.modal-title h3{margin:0;font-size:18px;letter-spacing:-.3px}
+.modal-title p{margin:4px 0 0;color:var(--muted);font-size:11px;display:flex;gap:10px;flex-wrap:wrap}
+.close-x{width:32px;height:32px;border-radius:9px;border:1px solid var(--line2);background:rgba(8,13,22,.6);color:var(--muted);font-size:18px;line-height:1}
+.close-x:hover{color:var(--red);border-color:rgba(251,113,133,.4)}
+.tabs{display:flex;gap:4px;padding:10px 18px 0;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{
+  border:0;background:transparent;color:var(--muted);padding:9px 13px;border-radius:9px 9px 0 0;
+  font-size:12px;font-weight:650;white-space:nowrap;border-bottom:2px solid transparent;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--cyan);border-bottom-color:var(--cyan);background:rgba(56,189,248,.06)}
+.modal-body{padding:18px 20px;overflow:auto;flex:1}
+.modal-foot{padding:12px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;color:var(--dim);font-size:11px}
+.detail-hero{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px;border:1px solid var(--line);border-radius:14px;
+  background:rgba(8,13,22,.5);margin-bottom:14px;
+}
+.detail-hero .kv{display:flex;flex-direction:column;min-width:110px}
+.detail-hero .kv small{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.detail-hero .kv b{font-size:13px}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:14px}
+.metric-box{border:1px solid var(--line);border-radius:13px;padding:12px;background:rgba(30,41,59,.45)}
+.metric-box small{color:var(--muted);font-size:10px;display:block;margin-bottom:5px}
+.metric-box b{font-size:19px;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
+.mini-panel{border:1px solid var(--line);border-radius:13px;padding:13px;background:rgba(8,13,22,.45)}
+.mini-panel h4{margin:0 0 10px;font-size:12px;color:var(--text)}
+.kv-list{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow:auto}
+.kv-row{display:flex;justify-content:space-between;gap:12px;font-size:11px;padding-bottom:6px;border-bottom:1px solid rgba(148,163,184,.08)}
+.kv-row span:first-child{color:var(--muted);word-break:break-all}
+.kv-row span:last-child{font-family:"JetBrains Mono",monospace;font-weight:600;text-align:right;word-break:break-all}
+.item-row{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.08)}
+.item-row .item-icon{width:30px;height:30px;font-size:14px;flex:none}
+.item-row-main{flex:1;min-width:0}
+.item-row-main b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item-row-main .bar{margin:6px 0 0}
+.item-row-val{font-family:"JetBrains Mono",monospace;font-weight:700;font-size:12px;min-width:80px;text-align:right}
+.spark-wrap{border:1px solid var(--line);border-radius:14px;padding:14px;background:rgba(8,13,22,.5);margin-bottom:14px}
+.spark-wrap h4{margin:0 0 8px;font-size:12px;display:flex;align-items:center;gap:8px}
+.legend{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:10px;font-weight:600;margin-left:10px}
+.legend i{width:8px;height:8px;border-radius:3px;display:inline-block}
+.spark svg{width:100%;height:150px;overflow:visible}
+.spark .gridline{stroke:rgba(148,163,184,.12);stroke-width:1;stroke-dasharray:3 5}
+.setup-note{border:1px solid rgba(251,191,36,.25);background:rgba(251,191,36,.07);color:#ffe8ad;border-radius:11px;padding:10px 12px;font-size:11px;margin-bottom:14px}
+pre.code{
+  margin:0;padding:15px;border:1px solid var(--line2);border-radius:12px;background:#050a12;color:#cbe7ff;
+  font-family:"JetBrains Mono",monospace;font-size:11px;line-height:1.65;overflow:auto;white-space:pre;
+}
+.steps{margin:14px 0 0;padding-left:20px;color:var(--muted);font-size:12px}
+.steps li{margin:6px 0}
+.steps b{color:var(--text)}
+
+/* toast */
+.toasts{position:fixed;right:20px;bottom:20px;z-index:200;display:flex;flex-direction:column;gap:9px}
+.toast{
+  min-width:220px;max-width:360px;padding:11px 14px;border-radius:12px;font-size:12px;font-weight:600;
+  border:1px solid var(--line2);background:rgba(16,24,39,.96);box-shadow:var(--shadow);animation:rise .2s ease;
+}
+.toast.success{border-color:rgba(52,211,153,.35);color:#b9f5dd}
+.toast.error{border-color:rgba(251,113,133,.35);color:#ffd4dc}
+.foot{text-align:center;color:var(--dim);font-size:11px;margin-top:30px}
+
+@media(max-width:720px){
+  .app{padding:12px 12px 40px}
+  .topbar{position:static;padding:11px}
+  .brand{min-width:0}
+  .brand p{display:none}
+  .topbar-spacer{display:none}
+  .actions{width:100%}
+  .actions .btn{flex:1}
+  .hero{padding:17px}
+  .hero h2{font-size:20px}
+  .stat-value{font-size:21px}
+  .item-tools .mini-input{width:120px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">TS</div>
+      <div>
+        <h1>TrackStat</h1>
+        <p>Anime Adventures Monitor</p>
+      </div>
+    </div>
+    <div class="topbar-spacer"></div>
+    <div id="statusPill" class="status-pill"><i></i><span>Đang tải dữ liệu…</span></div>
+    <div class="actions">
+      <button class="btn" data-action="setup" title="Xem lại loader">⚙️ Cài đặt</button>
+      <button class="btn" data-action="export" title="Tải data.json">⬇ Export</button>
+      <button class="btn" data-action="save-now" title="Đẩy dữ liệu lên kho lưu trữ ngay">☁ Lưu ngay</button>
+      <button class="btn" data-action="toggle-auto" id="autoBtn">⏸ Auto</button>
+      <button class="btn primary" data-action="refresh" id="refreshBtn">⟳ Làm mới</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-inner">
+      <div>
+        <div class="eyebrow">Tổng quan hệ thống</div>
+        <h2>Theo dõi tài khoản theo Item &amp; PC</h2>
+        <p>Dữ liệu được chuẩn hóa ở server: giá trị tốt nhất được giữ lại, số 0 thoáng qua lúc teleport bị chặn, level/item được kiểm tra trước khi lưu.</p>
+      </div>
+      <div class="hero-meta" id="heroMeta">
+        <span class="chip">Đang đồng bộ…</span>
+      </div>
+    </div>
+    <div class="stat-grid" id="statGrid"></div>
+  </section>
+
+  <section class="section">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Giám sát trực tiếp</div>
+        <h2>Item Monitor &amp; PC Monitor</h2>
+        <p>Bấm vào một item để lọc account đang giữ · bấm vào account để xem chi tiết.</p>
+      </div>
+    </div>
+    <div class="monitor-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span class="mark"></span> Item Monitor</h3>
+          <div class="item-tools">
+            <input id="itemSearch" class="mini-input" placeholder="Tìm item…" aria-label="Tìm item">
+          </div>
+        </div>
+        <div id="itemGrid" class="item-grid"><div class="empty">Đang tải…</div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span class="mark" style="background:linear-gradient(var(--violet),var(--cyan))"></span> PC Monitor</h3>
+          <span id="pcCount" class="panel-sub">—</span>
+        </div>
+        <div id="pcGrid" class="pc-grid"><div class="empty">Đang tải…</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="accountsSection">
+    <div class="section-head">
+      <div>
+        <div class="eyebrow">Danh sách</div>
+        <h2>Tài khoản</h2>
+        <p id="tableCaption">—</p>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="table-tools">
+        <div class="search-wrap">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="search" class="input" placeholder="Tìm tên account, userId, PC hoặc item…" aria-label="Tìm account">
+        </div>
+        <select id="filter" class="select" aria-label="Lọc trạng thái">
+          <option value="all">Tất cả</option>
+          <option value="online">Đang online</option>
+          <option value="offline">Offline</option>
+          <option value="item">Có item lọc</option>
+        </select>
+        <select id="pcFilter" class="select" aria-label="Lọc PC"><option value="all">Mọi PC</option></select>
+        <select id="sort" class="select" aria-label="Sắp xếp">
+          <option value="seen">Mới cập nhật</option>
+          <option value="level">Level cao</option>
+          <option value="gems">Gems nhiều</option>
+          <option value="pearls">Pearls nhiều</option>
+          <option value="items">Nhiều item</option>
+          <option value="name">Tên A–Z</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Account</th><th>PC</th><th>Trạng thái</th><th>Level</th><th>Gems</th><th>Pearls</th><th>Loại item</th><th>Cập nhật</th><th></th>
+          </tr></thead>
+          <tbody id="accountRows"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">TrackStat v2 · zero-dependency · auto refresh mỗi 15s · <span id="footTime">—</span></div>
+</div>
+
+<!-- Detail modal -->
+<div class="modal-backdrop" id="detailModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="avatar" id="detailAvatar">??</div>
+      <div class="modal-title">
+        <h3 id="detailName">—</h3>
+        <p id="detailSub">—</p>
+      </div>
+      <button class="close-x" data-action="close-modal" aria-label="Đóng">×</button>
+    </div>
+    <div class="tabs" id="detailTabs">
+      <button class="tab active" data-action="tab" data-tab="overview">Tổng quan</button>
+      <button class="tab" data-action="tab" data-tab="items">Items</button>
+      <button class="tab" data-action="tab" data-tab="raw">Dữ liệu thô</button>
+      <button class="tab" data-action="tab" data-tab="history">Lịch sử</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-foot"><span>Dữ liệu được gộp từ lần báo cáo gần nhất còn hợp lệ.</span></div>
+  </div>
+</div>
+
+<!-- Setup modal -->
+<div class="modal-backdrop" id="setupModal" role="dialog" aria-modal="true">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-head">
+      <div class="avatar">⚙</div>
+      <div class="modal-title"><h3>Cài đặt script</h3><p>Loader dùng ngay — key và PC đã được điền sẵn.</p></div>
+      <button class="close-x" data-action="close-modal" aria-label="Đóng">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="setupWarning" class="setup-note"></div>
+      <pre class="code" id="loaderCode"></pre>
+      <ol class="steps">
+        <li><b>Key chính</b> và PC <b>MAY-1</b> đã được điền sẵn đúng loader bạn đang dùng. Chỉ đổi PC nếu chạy máy khác.</li>
+        <li>Mặc định dùng <b>raw GitHub</b>. Nếu muốn tải qua server Render, bấm <b>Copy /main.lua</b>.</li>
+        <li>Dán vào Delta, chạy. Script tự gửi mỗi 30s và tự chạy lại sau teleport.</li>
+        <li>Trong console có thể gõ <code>TRACK_NOW()</code>, <code>TRACK_STATUS()</code>, <code>TRACK_RESET()</code>.</li>
+      </ol>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost" data-action="close-modal">Đóng</button>
+      <button class="btn" data-action="copy-loader" data-mode="origin">⧉ Copy /main.lua</button>
+      <button class="btn primary" data-action="copy-loader" data-mode="github">⧉ Copy loader GitHub</button>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+(function(){
+'use strict';
+
+// Loader mặc định theo đúng script bạn đang chạy trên Delta.
+// Key được nhúng sẵn để nút Copy trả về loader dùng ngay; vẫn nên đổi PC khi chạy máy khác.
+const DEFAULT_KEY = '3409a8e2-20b1-4daa-9c9d-4f41a8f5159b';
+const DEFAULT_PC = 'MAY-1';
+const GITHUB_RAW = 'https://raw.githubusercontent.com/diobrandoasdada/trackstat/main/main.lua';
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+const ESC = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+const e = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, (c) => ESC[c]);
+
+const nf = new Intl.NumberFormat('vi-VN');
+const cf = new Intl.NumberFormat('vi-VN', { notation: 'compact', maximumFractionDigits: 1 });
+const num = (v) => Number(v) || 0;
+const fmt = (v) => nf.format(num(v));
+const cfmt = (v) => Math.abs(num(v)) >= 10000 ? cf.format(num(v)) : fmt(v);
+
+function ago(ts){
+  if (!ts) return '—';
+  const s = Math.max(0, Math.floor((Date.now() - Number(ts)) / 1000));
+  if (s < 10) return 'vừa xong';
+  if (s < 60) return s + 'g trước';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + 'p trước';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + 'giờ trước';
+  return Math.floor(h / 24) + ' ngày trước';
+}
+
+function initial(name){
+  const s = String(name || '?').trim();
+  if (!s) return '??';
+  const parts = s.split(/[\s_.]+/).filter(Boolean);
+  return (parts.length > 1 ? parts[0][0] + parts[1][0] : s.slice(0, 2)).toUpperCase();
+}
+
+function itemIcon(name){
+  const s = String(name || '').toLowerCase();
+  if (/pearl/.test(s)) return '🦪';
+  if (/star|remnant/.test(s)) return '✨';
+  if (/gem|crystal/.test(s)) return '💎';
+  if (/gold|coin|cash/.test(s)) return '🪙';
+  if (/reroll|dice/.test(s)) return '🎲';
+  if (/token|ticket/.test(s)) return '🔁';
+  if (/fruit|apple|berry/.test(s)) return '🍎';
+  if (/scroll|book/.test(s)) return '📜';
+  return '📦';
+}
+
+const METRIC_LABELS = [
+  ['level','Level','⭐'], ['gems','Gems','💎'], ['gold','Gold','🪙'],
+  ['pearls','Summer Pearls','🦪'], ['rerolls','Reroll','🎲'],
+  ['rerollTokens','Token Reroll','🔁'], ['starRemnant','Star Remnant','✨'],
+  ['starRemnantLimited','Star Remnant (L)','🌟'],
+];
+
+const state = {
+  data: null, query: '', itemQuery: '', filter: 'all', pc: 'all', sort: 'seen',
+  tab: 'overview', selected: null, detailItemQuery: '', rawQuery: '',
+  loading: false, auto: true, lastError: null,
+};
+
+/* ------------------------------ data ------------------------------ */
+
+async function load(manual){
+  if (state.loading) return;
+  state.loading = true;
+  $('#refreshBtn').classList.add('loading');
+  try {
+    const res = await fetch('/api/state', { cache: 'no-store' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    state.data = data;
+    state.lastError = null;
+    renderAll();
+    if (manual) toast('Đã cập nhật dữ liệu', 'success');
+  } catch (err) {
+    state.lastError = err.message || String(err);
+    renderStatusError();
+    if (manual) toast('Không tải được: ' + state.lastError, 'error');
+  } finally {
+    state.loading = false;
+    $('#refreshBtn').classList.remove('loading');
+  }
+}
+
+function accounts(){ return (state.data && Array.isArray(state.data.accounts)) ? state.data.accounts : []; }
+function findAccount(user){ return accounts().find((a) => a.user === user) || null; }
+
+/* ------------------------------ render ------------------------------ */
+
+function renderAll(){
+  if (!state.data) return;
+  renderStatus();
+  renderHero();
+  renderStats();
+  renderItemMonitor();
+  renderPCMonitor();
+  renderPcOptions();
+  renderTable();
+  if ($('#detailModal').classList.contains('open')) renderDetail();
+}
+
+function renderStatus(){
+  const d = state.data;
+  const online = num(d.stats && d.stats.online);
+  const pill = $('#statusPill');
+  pill.className = 'status-pill' + (online > 0 ? ' live' : '');
+  pill.innerHTML = '<i></i><span>' + (online > 0 ? online + ' account online' : 'Không có account online') + '</span>';
+  $('#footTime').textContent = 'sync ' + ago(d.now);
+}
+
+function renderStatusError(){
+  const pill = $('#statusPill');
+  pill.className = 'status-pill err';
+  pill.innerHTML = '<i></i><span>Mất kết nối API · ' + e(state.lastError || 'thử lại') + '</span>';
+}
+
+function renderHero(){
+  const d = state.data;
+  const stable = d.keyPersistent;
+  const st = d.storage || {};
+  let storageLabel = '💾 Lưu local';
+  let storageClass = '';
+  if (st.enabled) {
+    if (st.status === 'ok') { storageLabel = '☁ Đã lưu đám mây'; storageClass = 'good'; }
+    else if (st.status === 'error') { storageLabel = '☁ Lỗi lưu đám mây'; storageClass = 'warn'; }
+    else { storageLabel = '☁ Đang đồng bộ…'; storageClass = 'warn'; }
+  }
+  $('#heroMeta').innerHTML =
+    '<span class="chip ' + (stable ? 'good' : 'warn') + '">' + (stable ? '✓' : '⚠') + ' KEY ' + (stable ? 'đã cố định' : 'chưa cố định') + '</span>' +
+    '<span class="chip ' + storageClass + '">' + storageLabel + (st.lastSave ? ' <b>' + ago(st.lastSave) + '</b>' : '') + '</span>' +
+    '<span class="chip">v' + e(d.version || '?') + '</span>' +
+    '<span class="chip">Cập nhật <b>' + ago(d.now) + '</b></span>' +
+    '<span class="chip">Online window <b>' + Math.round(num(d.onlineMs) / 1000) + 's</b></span>';
+  const warn = $('#setupWarning');
+  if (stable) {
+    warn.className = 'setup-note';
+    warn.style.borderColor = 'rgba(52,211,153,.25)';
+    warn.style.background = 'rgba(52,211,153,.07)';
+    warn.style.color = '#b9f5dd';
+    warn.textContent = '✓ KEY ổn định và đã được nhúng sẵn trong loader bên dưới để copy ngay. Lưu ý: dashboard là public nên người xem source vẫn thấy key — chỉ dùng cho mục đích cá nhân của bạn.';
+  } else {
+    warn.className = 'setup-note';
+    warn.style.borderColor = '';
+    warn.style.background = '';
+    warn.style.color = '';
+    warn.textContent = '⚠ KEY chưa được cố định. Key đã nhúng sẵn bên dưới, nhưng Render free-tier có thể reset data.json làm key đổi — hãy đặt biến môi trường KEY trong Render Dashboard.';
+  }
+  $('#loaderCode').textContent = loaderSnippet();
+}
+
+function renderStats(){
+  const s = (state.data && state.data.stats) || {};
+  const m = s.metrics || {};
+  const pcs = Object.keys(s.pcs || {});
+  const topPc = pcs.slice().sort((a,b) => num(s.pcs[b]) - num(s.pcs[a]))[0];
+  const cards = [
+    { icon:'👥', label:'Tài khoản', value: fmt(s.accounts), trend: num(s.online) + ' online' },
+    { icon:'🖥️', label:'Số PC', value: fmt(pcs.length), trend: topPc ? e(topPc) + ' · ' + num(s.pcs[topPc]) : '—' },
+    { icon:'⭐', label:'Level cao nhất', value: cfmt(m.level && m.level.max), trend: num(m.level && m.level.with) + ' acc có level' },
+    { icon:'💎', label:'Gems tổng', value: cfmt(m.gems && m.gems.total), trend: 'cao ' + cfmt(m.gems && m.gems.max) },
+    { icon:'🦪', label:'Summer Pearls', value: cfmt(m.pearls && m.pearls.total), trend: num(m.pearls && m.pearls.with) + ' acc giữ' },
+    { icon:'📦', label:'Loại item', value: fmt(s.itemKinds), trend: 'trên ' + fmt(s.accounts) + ' account' },
+  ];
+  $('#statGrid').innerHTML = cards.map((c) =>
+    '<div class="stat-card"><div class="stat-top"><span class="stat-icon">' + c.icon + '</span><span class="stat-trend">' + c.trend + '</span></div>' +
+    '<div class="stat-value">' + c.value + '</div><div class="stat-label">' + c.label + '</div></div>'
+  ).join('');
+}
+
+function itemAggregates(){
+  const map = new Map();
+  for (const a of accounts()) {
+    for (const [key, value] of Object.entries(a.items || {})) {
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0) continue;
+      let rec = map.get(key);
+      if (!rec) { rec = { name: key, total: 0, holders: 0, max: 0, top: '' }; map.set(key, rec); }
+      rec.total += n; rec.holders += 1;
+      if (n > rec.max) { rec.max = n; rec.top = a.user; }
+    }
+  }
+  let list = Array.from(map.values()).sort((a,b) => b.total - a.total || b.holders - a.holders);
+  const q = state.itemQuery.trim().toLowerCase();
+  if (q) list = list.filter((x) => x.name.toLowerCase().includes(q));
+  return list;
+}
+
+function renderItemMonitor(){
+  const list = itemAggregates();
+  const max = list.length ? list[0].total : 1;
+  const shown = list.slice(0, state.itemQuery ? 30 : 12);
+  if (!shown.length) {
+    $('#itemGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><b>' + (state.itemQuery ? 'Không tìm thấy item' : 'Chưa có item') + '</b>' +
+      (state.itemQuery ? 'Thử tên khác.' : 'Item sẽ xuất hiện khi account báo cáo từ sảnh.') + '</div>';
+    return;
+  }
+  $('#itemGrid').innerHTML = shown.map((it) => {
+    const pct = Math.max(4, Math.min(100, Math.round(it.total / max * 100)));
+    return '<button class="item-card" data-action="filter-item" data-item="' + e(it.name) + '" title="Lọc account giữ ' + e(it.name) + '">' +
+      '<div class="item-top"><span class="item-icon">' + itemIcon(it.name) + '</span><span class="item-badge">' + fmt(it.holders) + ' acc</span></div>' +
+      '<div class="item-name" title="' + e(it.name) + '">' + e(it.name) + '</div>' +
+      '<div class="item-total">' + cfmt(it.total) + ' <span>tổng</span></div>' +
+      '<div class="bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="item-foot">Cao nhất ' + cfmt(it.max) + ' · ' + e(it.top || '—') + '</div>' +
+      '</button>';
+  }).join('');
+}
+
+function renderPCMonitor(){
+  const groups = new Map();
+  for (const a of accounts()) {
+    const pc = a.pc || 'NO-PC';
+    if (!groups.has(pc)) groups.set(pc, []);
+    groups.get(pc).push(a);
+  }
+  const list = Array.from(groups.entries()).sort((a,b) => {
+    const oa = a[1].filter((x) => x.online).length, ob = b[1].filter((x) => x.online).length;
+    return ob - oa || b[1].length - a[1].length || a[0].localeCompare(b[0]);
+  });
+  $('#pcCount').textContent = list.length + ' PC';
+  if (!list.length) {
+    $('#pcGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><b>Chưa có PC</b>Dữ liệu sẽ hiện sau lần báo cáo đầu tiên.</div>';
+    return;
+  }
+  $('#pcGrid').innerHTML = list.map(([pc, members]) => {
+    const online = members.filter((x) => x.online).length;
+    const chips = members.slice(0, 6).map((a) =>
+      '<button class="account-chip ' + (a.online ? 'is-online' : '') + '" data-action="open" data-user="' + e(a.user) + '">' +
+        '<span class="avatar">' + e(initial(a.user)) + '</span>' +
+        '<span class="chip-main"><b>' + e(a.user) + '</b><small>Lv ' + cfmt(a.metrics && a.metrics.level) + ' · ' + cfmt(a.metrics && a.metrics.gems) + ' 💎</small></span>' +
+        '<span class="dot"></span>' +
+      '</button>'
+    ).join('');
+    const more = members.length > 6
+      ? '<button class="more-btn" data-action="filter-pc" data-pc="' + e(pc) + '">Xem thêm ' + (members.length - 6) + ' account →</button>' : '';
+    return '<div class="pc-card"><div class="pc-head"><span class="pc-icon">🖥️</span><div><h4 title="' + e(pc) + '">' + e(pc) + '</h4><p>' + online + '/' + members.length + ' online</p></div>' +
+      '<button class="mini" data-action="filter-pc" data-pc="' + e(pc) + '">Lọc</button></div><div class="pc-accounts">' + chips + '</div>' + more + '</div>';
+  }).join('');
+}
+
+function renderPcOptions(){
+  const pcs = Array.from(new Set(accounts().map((a) => a.pc || 'NO-PC'))).sort();
+  const sel = $('#pcFilter');
+  const prev = state.pc;
+  sel.innerHTML = '<option value="all">Mọi PC</option>' + pcs.map((p) => '<option value="' + e(p) + '">' + e(p) + '</option>').join('');
+  sel.value = pcs.includes(prev) ? prev : 'all';
+  state.pc = sel.value;
+}
+
+function filteredAccounts(){
+  let list = accounts().slice();
+  const q = state.query.trim().toLowerCase();
+
+  if (state.filter === 'online') list = list.filter((a) => a.online);
+  else if (state.filter === 'offline') list = list.filter((a) => !a.online);
+  else if (state.filter === 'item') list = list.filter((a) => Object.prototype.hasOwnProperty.call(a.items || {}, state.query.trim()));
+  if (state.pc !== 'all') list = list.filter((a) => (a.pc || 'NO-PC') === state.pc);
+
+  if (q) {
+    list = list.filter((a) => {
+      if (String(a.user || '').toLowerCase().includes(q)) return true;
+      if (String(a.userId || '').toLowerCase().includes(q)) return true;
+      if (String(a.pc || '').toLowerCase().includes(q)) return true;
+      return Object.keys(a.items || {}).some((k) => k.toLowerCase().includes(q));
+    });
+  }
+
+  const mv = (a, k) => num(a.metrics && a.metrics[k]);
+  switch (state.sort) {
+    case 'level': list.sort((a,b) => mv(b,'level') - mv(a,'level') || b.seen - a.seen); break;
+    case 'gems': list.sort((a,b) => mv(b,'gems') - mv(a,'gems') || b.seen - a.seen); break;
+    case 'pearls': list.sort((a,b) => mv(b,'pearls') - mv(a,'pearls') || b.seen - a.seen); break;
+    case 'items': list.sort((a,b) => mv(b,'itemKinds') - mv(a,'itemKinds') || b.seen - a.seen); break;
+    case 'name': list.sort((a,b) => String(a.user).localeCompare(String(b.user))); break;
+    default: list.sort((a,b) => b.seen - a.seen);
+  }
+  return list;
+}
+
+function renderTable(){
+  const list = filteredAccounts();
+  $('#tableCaption').textContent = 'Đang hiện ' + list.length + ' / ' + accounts().length + ' account' +
+    (state.query ? ' · tìm “' + state.query + '”' : '') + (state.pc !== 'all' ? ' · PC ' + state.pc : '');
+  if (!list.length) {
+    $('#accountRows').innerHTML = '<tr><td colspan="9"><div class="empty"><b>Không có account phù hợp</b>Thử đổi bộ lọc hoặc từ khóa.</div></td></tr>';
+    return;
+  }
+  $('#accountRows').innerHTML = list.map((a) => {
+    const m = a.metrics || {};
+    return '<tr data-action="open" data-user="' + e(a.user) + '">' +
+      '<td><div class="user-cell"><span class="avatar">' + e(initial(a.user)) + '</span><div><b>' + e(a.user) + '</b><small>ID: ' + e(a.userId || '—') + '</small></div></div></td>' +
+      '<td><span class="pc-tag">' + e(a.pc || 'NO-PC') + '</span></td>' +
+      '<td><span class="status ' + (a.online ? 'on' : '') + '"><i></i>' + (a.online ? 'Online' : 'Offline') + '<small>' + ago(a.seen) + '</small></span></td>' +
+      '<td><b>Lv ' + cfmt(m.level) + '</b></td>' +
+      '<td>' + cfmt(m.gems) + '</td>' +
+      '<td>' + cfmt(m.pearls) + '</td>' +
+      '<td>' + fmt(m.itemKinds) + '</td>' +
+      '<td>' + ago(a.seen) + '</td>' +
+      '<td><button class="icon-btn" data-action="open" data-user="' + e(a.user) + '" aria-label="Xem chi tiết">›</button></td>' +
+      '</tr>';
+  }).join('');
+}
+
+/* ------------------------------ detail ------------------------------ */
+
+function openDetail(user){
+  if (!findAccount(user)) return;
+  state.selected = user;
+  state.tab = 'overview';
+  state.detailItemQuery = '';
+  state.rawQuery = '';
+  $('#detailModal').classList.add('open');
+  renderDetail();
+}
+
+function renderDetail(){
+  const a = findAccount(state.selected);
+  if (!a) { $('#detailModal').classList.remove('open'); return; }
+  $('#detailAvatar').textContent = initial(a.user);
+  $('#detailName').textContent = a.user || '—';
+  $('#detailSub').innerHTML =
+    '<span>🆔 ' + e(a.userId || '—') + '</span><span>🖥️ ' + e(a.pc || 'NO-PC') + '</span>' +
+    '<span class="status ' + (a.online ? 'on' : '') + '"><i></i>' + (a.online ? 'Online' : 'Offline') + '</span>' +
+    '<span>🕒 ' + ago(a.seen) + '</span><span>📍 ' + e(a.context || '—') + '</span>';
+  $$('#detailTabs .tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === state.tab));
+
+  if (state.tab === 'items') renderDetailItems(a);
+  else if (state.tab === 'raw') renderDetailRaw(a);
+  else if (state.tab === 'history') renderDetailHistory(a);
+  else renderDetailOverview(a);
+}
+
+function renderDetailOverview(a){
+  const m = a.metrics || {};
+  const src = a.sources || {};
+  const strikes = a.zeroStrikes || {};
+  const strikeCount = Object.values(strikes).filter((v) => num(v) > 0).length;
+  const metricsHtml = METRIC_LABELS.map(([k,label,icon]) =>
+    '<div class="metric-box"><small>' + icon + ' ' + e(label) + '</small><b>' + cfmt(m[k]) + '</b></div>'
+  ).join('') +
+  '<div class="metric-box"><small>📦 Loại item</small><b>' + fmt(m.itemKinds) + '</b></div>' +
+  '<div class="metric-box"><small>🔢 Tổng item</small><b>' + cfmt(m.itemTotal) + '</b></div>';
+
+  const sourceRows = Object.keys(src).length
+    ? Object.entries(src).map(([k,v]) => '<div class="kv-row"><span>' + e(k) + '</span><span>' + e(v) + '</span></div>').join('')
+    : '<div class="kv-row"><span>Chưa có nguồn</span><span>—</span></div>';
+
+  $('#detailBody').innerHTML =
+    '<div class="detail-hero">' +
+      '<div class="kv"><small>Level</small><b>Lv ' + cfmt(m.level) + '</b></div>' +
+      '<div class="kv"><small>Gems</small><b>' + fmt(m.gems) + '</b></div>' +
+      '<div class="kv"><small>Pearls</small><b>' + fmt(m.pearls) + '</b></div>' +
+      '<div class="kv"><small>Item kinds</small><b>' + fmt(m.itemKinds) + '</b></div>' +
+      '<div class="kv"><small>Lần báo cáo</small><b>' + fmt(a.updates) + '</b></div>' +
+    '</div>' +
+    '<div class="metric-grid">' + metricsHtml + '</div>' +
+    '<div class="two-col">' +
+      '<div class="mini-panel"><h4>Nguồn giá trị đã chọn</h4><div class="kv-list">' + sourceRows + '</div></div>' +
+      '<div class="mini-panel"><h4>Trạng thái dữ liệu</h4><div class="kv-list">' +
+        '<div class="kv-row"><span>Lần đầu thấy</span><span>' + e(ago(a.first)) + '</span></div>' +
+        '<div class="kv-row"><span>Giá trị tốt cuối</span><span>' + e(ago(a.lastGoodAt)) + '</span></div>' +
+        '<div class="kv-row"><span>Item cuối</span><span>' + e(ago(a.lastItemAt)) + '</span></div>' +
+        '<div class="kv-row"><span>Đang chặn số 0</span><span>' + strikeCount + ' field</span></div>' +
+        '<div class="kv-row"><span>Place ID</span><span>' + e(a.place || '—') + '</span></div>' +
+      '</div></div>' +
+    '</div>';
+}
+
+function renderDetailItems(a){
+  let entries = Object.entries(a.items || {}).filter(([,v]) => Number(v) > 0)
+    .sort((x,y) => Number(y[1]) - Number(x[1]));
+  const q = state.detailItemQuery.trim().toLowerCase();
+  if (q) entries = entries.filter(([k]) => k.toLowerCase().includes(q));
+  const max = entries.length ? Number(entries[0][1]) : 1;
+  $('#detailBody').innerHTML =
+    '<input id="detailItemSearch" class="input" style="margin-bottom:12px" placeholder="Tìm trong items…" value="' + e(state.detailItemQuery) + '">' +
+    (entries.length ? entries.map(([name,val]) => {
+      const pct = Math.max(3, Math.min(100, Math.round(Number(val) / max * 100)));
+      return '<div class="item-row"><span class="item-icon">' + itemIcon(name) + '</span><div class="item-row-main"><b title="' + e(name) + '">' + e(name) + '</b>' +
+        '<div class="bar"><i style="width:' + pct + '%"></i></div></div><span class="item-row-val">' + fmt(val) + '</span></div>';
+    }).join('') : '<div class="empty"><b>Không có item</b>Account này chưa báo cáo item hợp lệ.</div>');
+}
+
+function renderDetailRaw(a){
+  let entries = Object.entries(a.flat || {});
+  const q = state.rawQuery.trim().toLowerCase();
+  if (q) entries = entries.filter(([k,v]) => k.toLowerCase().includes(q) || String(v).toLowerCase().includes(q));
+  entries.sort((x,y) => x[0].localeCompare(y[0]));
+  $('#detailBody').innerHTML =
+    '<input id="rawSearch" class="input" style="margin-bottom:12px" placeholder="Tìm key hoặc giá trị…" value="' + e(state.rawQuery) + '">' +
+    '<div class="kv-list" style="max-height:none">' + (entries.length ? entries.map(([k,v]) =>
+      '<div class="kv-row"><span>' + e(k) + '</span><span>' + e(typeof v === 'number' ? fmt(v) : v) + '</span></div>'
+    ).join('') : '<div class="empty">Không có dữ liệu.</div>') + '</div>';
+}
+
+function sparkline(values, color){
+  const pts = values.map((v) => num(v));
+  if (!pts.length) return '<div class="empty" style="padding:24px">Chưa có lịch sử.</div>';
+  if (pts.length === 1) pts.push(pts[0]);
+  const w = 860, h = 140, pad = 8;
+  const min = Math.min.apply(null, pts), max = Math.max.apply(null, pts);
+  const range = max - min || 1;
+  const coords = pts.map((v,i) => {
+    const x = pad + (i / (pts.length - 1)) * (w - pad * 2);
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return x.toFixed(1) + ',' + y.toFixed(1);
+  }).join(' ');
+  const area = pad + ',' + (h - pad) + ' ' + coords + ' ' + (w - pad) + ',' + (h - pad);
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+    '<line class="gridline" x1="0" y1="' + (h/3) + '" x2="' + w + '" y2="' + (h/3) + '"/>' +
+    '<line class="gridline" x1="0" y1="' + (2*h/3) + '" x2="' + w + '" y2="' + (2*h/3) + '"/>' +
+    '<polygon points="' + area + '" fill="' + color + '" opacity=".08"/>' +
+    '<polyline points="' + coords + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+    '</svg>';
+}
+
+function renderDetailHistory(a){
+  const h = Array.isArray(a.history) ? a.history : [];
+  const lv = h.map((x) => x.level), gems = h.map((x) => x.gems);
+  const rows = h.slice(-14).reverse().map((x) =>
+    '<tr><td>' + e(ago(x.t)) + '</td><td>' + e(x.ctx || '—') + '</td><td>Lv ' + cfmt(x.level) + '</td><td>' + cfmt(x.gems) + '</td><td>' + cfmt(x.pearls) + '</td><td>' + cfmt(x.star) + '</td><td>' + fmt(x.items) + '</td></tr>'
+  ).join('');
+  $('#detailBody').innerHTML =
+    '<div class="spark-wrap"><h4>Xu hướng Level <span class="legend"><i style="background:#38bdf8"></i>Level</span></h4><div class="spark">' + sparkline(lv, '#38bdf8') + '</div></div>' +
+    '<div class="spark-wrap"><h4>Xu hướng Gems <span class="legend"><i style="background:#a78bfa"></i>Gems</span></h4><div class="spark">' + sparkline(gems, '#a78bfa') + '</div></div>' +
+    '<div class="mini-panel"><h4>(' + h.length + ' mốc gần nhất)</h4><div class="table-wrap" style="max-height:320px"><table><thead><tr><th>Thời gian</th><th>Ngữ cảnh</th><th>Level</th><th>Gems</th><th>Pearls</th><th>Star</th><th>Items</th></tr></thead><tbody>' +
+      (rows || '<tr><td colspan="7"><div class="empty">Chưa có lịch sử.</div></td></tr>') + '</tbody></table></div></div>';
+}
+
+/* ------------------------------ setup / misc ------------------------------ */
+
+function loaderSnippet(mode){
+  const url = mode === 'origin' ? location.origin + '/main.lua' : GITHUB_RAW;
+  return "getgenv().Track_Settings = {\n" +
+    "  ['key'] = '" + DEFAULT_KEY + "',\n" +
+    "  ['PC']  = '" + DEFAULT_PC + "',\n" +
+    "}\n" +
+    "task.spawn(function() loadstring(game:HttpGet('" + url + "'))() end)";
+}
+
+function toast(msg, type){
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type || '');
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(8px)'; setTimeout(() => el.remove(), 250); }, 3200);
+}
+
+async function copyText(text){
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Đã copy vào clipboard', 'success');
+  } catch (_) {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); toast('Đã copy vào clipboard', 'success'); }
+    catch (__) { toast('Không copy được, hãy chọn tay.', 'error'); }
+    ta.remove();
+  }
+}
+
+function syncControls(){
+  $('#search').value = state.query;
+  $('#filter').value = state.filter;
+  $('#itemSearch').value = state.itemQuery;
+  $('#autoBtn').textContent = state.auto ? '⏸ Auto' : '▶ Auto';
+  $('#autoBtn').style.color = state.auto ? '' : 'var(--amber)';
+}
+
+/* ------------------------------ events ------------------------------ */
+
+document.addEventListener('click', (ev) => {
+  if (ev.target.classList.contains('modal-backdrop')) {
+    ev.target.classList.remove('open');
+    return;
+  }
+  const el = ev.target.closest('[data-action]');
+  if (!el) return;
+  const action = el.dataset.action;
+  if (action === 'open') openDetail(el.dataset.user);
+  else if (action === 'tab') { state.tab = el.dataset.tab; renderDetail(); }
+  else if (action === 'close-modal') el.closest('.modal-backdrop').classList.remove('open');
+  else if (action === 'setup') { $('#loaderCode').textContent = loaderSnippet(); $('#setupModal').classList.add('open'); }
+  else if (action === 'copy-loader') {
+    const mode = el.dataset.mode || 'github';
+    $('#loaderCode').textContent = loaderSnippet(mode);
+    copyText($('#loaderCode').textContent);
+  }
+  else if (action === 'refresh') load(true);
+  else if (action === 'export') window.location.href = '/api/export';
+  else if (action === 'save-now') {
+    fetch('/api/save', { method: 'POST' })
+      .then((r) => r.json())
+      .then((j) => {
+        toast(j.ok ? 'Đã đẩy dữ liệu lên đám mây' : 'Chưa bật lưu đám mây hoặc lưu lỗi', j.ok ? 'success' : 'error');
+        load(false);
+      })
+      .catch((err) => toast('Lưu lỗi: ' + err.message, 'error'));
+  }
+  else if (action === 'toggle-auto') { state.auto = !state.auto; syncControls(); toast(state.auto ? 'Bật tự động làm mới' : 'Tắt tự động làm mới'); }
+  else if (action === 'filter-pc') {
+    state.pc = el.dataset.pc; state.filter = 'all'; syncControls();
+    renderPcOptions(); $('#pcFilter').value = state.pc; renderTable();
+    $('#accountsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  else if (action === 'filter-item') {
+    state.query = el.dataset.item; state.filter = 'item'; syncControls(); renderTable();
+    $('#accountsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+});
+
+document.addEventListener('input', (ev) => {
+  const id = ev.target.id;
+  if (id === 'search') { state.query = ev.target.value; renderTable(); }
+  else if (id === 'itemSearch') { state.itemQuery = ev.target.value; renderItemMonitor(); }
+  else if (id === 'detailItemSearch') { state.detailItemQuery = ev.target.value; renderDetailItems(findAccount(state.selected)); }
+  else if (id === 'rawSearch') { state.rawQuery = ev.target.value; renderDetailRaw(findAccount(state.selected)); }
+});
+
+document.addEventListener('change', (ev) => {
+  const id = ev.target.id;
+  if (id === 'filter') { state.filter = ev.target.value; renderTable(); }
+  else if (id === 'pcFilter') { state.pc = ev.target.value; renderTable(); }
+  else if (id === 'sort') { state.sort = ev.target.value; renderTable(); }
+});
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape') $$('.modal-backdrop.open').forEach((m) => m.classList.remove('open'));
+});
+
+setInterval(() => { if (state.auto && !document.hidden) load(false); }, 15000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && state.auto) load(false); });
+
+syncControls();
+load(false);
+
+})();
+</script>
+</body>
+</html>

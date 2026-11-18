@@ -111,6 +111,14 @@ a{color:inherit}
   transition:.2s ease;
 }
 .stat-card:hover{transform:translateY(-2px);border-color:var(--line2)}
+/* Ô ưu tiên: Token Reroll / Fruit — nổi bật hơn các số liệu khác */
+.stat-card.hot{border-color:rgba(167,139,250,.55);background:linear-gradient(180deg,rgba(124,58,237,.24),rgba(14,21,34,.72));box-shadow:0 12px 32px -14px rgba(167,139,250,.55)}
+.stat-card.hot .stat-value{color:#c4b5fd;font-size:30px;text-shadow:0 0 22px rgba(167,139,250,.35)}
+.stat-card.hot .stat-icon{background:rgba(167,139,250,.2);border-color:rgba(167,139,250,.45)}
+.stat-card.hot .stat-label{color:#ddd6fe;font-weight:600}
+.stat-card.hot.fruit{border-color:rgba(52,211,153,.45);background:linear-gradient(180deg,rgba(16,185,129,.2),rgba(14,21,34,.72));box-shadow:0 12px 32px -14px rgba(52,211,153,.45)}
+.stat-card.hot.fruit .stat-value{color:#6ee7b7;text-shadow:0 0 22px rgba(52,211,153,.3)}
+.stat-card.hot.fruit .stat-icon{background:rgba(52,211,153,.18);border-color:rgba(52,211,153,.4)}
 .stat-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .stat-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.18)}
 .stat-card:nth-child(2) .stat-icon{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.18)}
@@ -255,10 +263,17 @@ tbody tr:hover{background:rgba(56,189,248,.05)}
 .detail-hero .kv{display:flex;flex-direction:column;min-width:110px}
 .detail-hero .kv small{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
 .detail-hero .kv b{font-size:13px}
+.detail-hero .kv.hot{padding:8px 12px;border:1px solid rgba(167,139,250,.5);border-radius:11px;background:rgba(124,58,237,.16)}
+.detail-hero .kv.hot small{color:#ddd6fe}
+.detail-hero .kv.hot b{color:#c4b5fd;font-size:19px}
 .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;margin-bottom:14px}
 .metric-box{border:1px solid var(--line);border-radius:13px;padding:12px;background:rgba(30,41,59,.45)}
 .metric-box small{color:var(--muted);font-size:10px;display:block;margin-bottom:5px}
 .metric-box b{font-size:19px;letter-spacing:-.4px;font-variant-numeric:tabular-nums}
+.metric-box.hot{border-color:rgba(167,139,250,.55);background:rgba(124,58,237,.16);box-shadow:0 0 20px -8px rgba(167,139,250,.5)}
+.metric-box.hot b{color:#c4b5fd;font-size:23px}
+.metric-box.hot small{color:#ddd6fe;font-weight:600}
+.hot-cell{color:#c4b5fd!important;font-weight:800!important;font-variant-numeric:tabular-nums}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:700px){.two-col{grid-template-columns:1fr}}
 .mini-panel{border:1px solid var(--line);border-radius:13px;padding:13px;background:rgba(8,13,22,.45)}
@@ -402,6 +417,7 @@ pre.code{
           <option value="seen">Mới cập nhật</option>
           <option value="level">Level cao</option>
           <option value="gems">Gems nhiều</option>
+          <option value="rerollTokens">🔁 Token Reroll nhiều</option>
           <option value="pearls">Pearls nhiều</option>
           <option value="items">Nhiều item</option>
           <option value="name">Tên A–Z</option>
@@ -410,7 +426,7 @@ pre.code{
       <div class="table-wrap">
         <table>
           <thead><tr>
-            <th>Account</th><th>PC</th><th>Trạng thái</th><th>Level</th><th>Gems</th><th>Pearls</th><th>Loại item</th><th>Cập nhật</th><th></th>
+            <th>Account</th><th>PC</th><th>Trạng thái</th><th>Level</th><th>Gems</th><th>🔁 Token Reroll</th><th>Pearls</th><th>Loại item</th><th>Cập nhật</th><th></th>
           </tr></thead>
           <tbody id="accountRows"></tbody>
         </table>
@@ -525,11 +541,12 @@ function itemIcon(name){
   return '📦';
 }
 
+// Thứ tự ưu tiên: Fruit → Token Reroll → Gems → Level → Coins → Summer Token → Star Remnant (L) → Star Remnant
 const METRIC_LABELS = [
-  ['level','Level','⭐'], ['gems','Gems','💎'], ['gold','Gold','🪙'],
-  ['pearls','Summer Pearls','🦪'], ['rerolls','Reroll','🎲'],
-  ['rerollTokens','Token Reroll','🔁'], ['starRemnant','Star Remnant','✨'],
-  ['starRemnantLimited','Star Remnant (L)','🌟'],
+  ['fruits','Fruits','🍎'], ['rerollTokens','Token Reroll','🔁'], ['gems','Gems','💎'],
+  ['level','Level','⭐'], ['gold','Coins','🪙'], ['pearls','Summer Token','🦪'],
+  ['starRemnantLimited','Star Remnant (L)','🌟'], ['starRemnant','Star Remnant','✨'],
+  ['rerolls','Reroll','🎲'],
 ];
 
 const state = {
@@ -633,16 +650,21 @@ function renderStats(){
   const m = s.metrics || {};
   const pcs = Object.keys(s.pcs || {});
   const topPc = pcs.slice().sort((a,b) => num(s.pcs[b]) - num(s.pcs[a]))[0];
+  const slot = (k) => m[k] || {};
   const cards = [
+    { icon:'🍎', label:'Fruits', value: cfmt(slot('fruits').total), trend: fmt(s.fruitKinds || 0) + ' loại · ' + num(slot('fruits').with) + ' acc', hot:'fruit' },
+    { icon:'🔁', label:'TOKEN REROLL', value: cfmt(slot('rerollTokens').total), trend: 'cao ' + cfmt(slot('rerollTokens').max) + ' · ' + num(slot('rerollTokens').with) + ' acc', hot:true },
+    { icon:'💎', label:'Gems tổng', value: cfmt(slot('gems').total), trend: 'cao ' + cfmt(slot('gems').max) },
+    { icon:'⭐', label:'Level cao nhất', value: cfmt(slot('level').max), trend: num(slot('level').with) + ' acc có level' },
+    { icon:'🪙', label:'Coins tổng', value: cfmt(slot('gold').total), trend: 'cao ' + cfmt(slot('gold').max) },
+    { icon:'🦪', label:'Summer Token', value: cfmt(slot('pearls').total), trend: num(slot('pearls').with) + ' acc giữ' },
+    { icon:'🌟', label:'Star Remnant (L)', value: cfmt(slot('starRemnantLimited').total), trend: num(slot('starRemnantLimited').with) + ' acc giữ' },
+    { icon:'✨', label:'Star Remnant', value: cfmt(slot('starRemnant').total), trend: num(slot('starRemnant').with) + ' acc giữ' },
     { icon:'👥', label:'Tài khoản', value: fmt(s.accounts), trend: num(s.online) + ' online' },
     { icon:'🖥️', label:'Số PC', value: fmt(pcs.length), trend: topPc ? e(topPc) + ' · ' + num(s.pcs[topPc]) : '—' },
-    { icon:'⭐', label:'Level cao nhất', value: cfmt(m.level && m.level.max), trend: num(m.level && m.level.with) + ' acc có level' },
-    { icon:'💎', label:'Gems tổng', value: cfmt(m.gems && m.gems.total), trend: 'cao ' + cfmt(m.gems && m.gems.max) },
-    { icon:'🦪', label:'Summer Pearls', value: cfmt(m.pearls && m.pearls.total), trend: num(m.pearls && m.pearls.with) + ' acc giữ' },
-    { icon:'📦', label:'Loại item', value: fmt(s.itemKinds), trend: 'trên ' + fmt(s.accounts) + ' account' },
   ];
   $('#statGrid').innerHTML = cards.map((c) =>
-    '<div class="stat-card"><div class="stat-top"><span class="stat-icon">' + c.icon + '</span><span class="stat-trend">' + c.trend + '</span></div>' +
+    '<div class="stat-card' + (c.hot ? ' hot' + (c.hot === 'fruit' ? ' fruit' : '') : '') + '"><div class="stat-top"><span class="stat-icon">' + c.icon + '</span><span class="stat-trend">' + c.trend + '</span></div>' +
     '<div class="stat-value">' + c.value + '</div><div class="stat-label">' + c.label + '</div></div>'
   ).join('');
 }
@@ -659,7 +681,17 @@ function itemAggregates(){
       if (n > rec.max) { rec.max = n; rec.top = a.user; }
     }
   }
-  let list = Array.from(map.values()).sort((a,b) => b.total - a.total || b.holders - a.holders);
+  // Ưu tiên: Fruit → Reroll/Token → Summer → Star Remnant → Gem → còn lại
+  const prio = (name) => {
+    const s = String(name).toLowerCase();
+    if (/fruit/.test(s)) return 0;
+    if (/reroll|token|ticket/.test(s)) return 1;
+    if (/pearl|summer/.test(s)) return 2;
+    if (/remnant/.test(s)) return 3;
+    if (/gem|crystal/.test(s)) return 4;
+    return 5;
+  };
+  let list = Array.from(map.values()).sort((a,b) => prio(a.name) - prio(b.name) || b.total - a.total || b.holders - a.holders);
   const q = state.itemQuery.trim().toLowerCase();
   if (q) list = list.filter((x) => x.name.toLowerCase().includes(q));
   return list;
@@ -707,7 +739,7 @@ function renderPCMonitor(){
     const chips = members.slice(0, 6).map((a) =>
       '<button class="account-chip ' + (a.online ? 'is-online' : '') + '" data-action="open" data-user="' + e(a.user) + '">' +
         '<span class="avatar">' + e(initial(a.user)) + '</span>' +
-        '<span class="chip-main"><b>' + e(a.user) + '</b><small>Lv ' + cfmt(a.metrics && a.metrics.level) + ' · ' + cfmt(a.metrics && a.metrics.gems) + ' 💎</small></span>' +
+        '<span class="chip-main"><b>' + e(a.user) + '</b><small>Lv ' + cfmt(a.metrics && a.metrics.level) + ' · <b class="hot-cell">🔁 ' + cfmt(a.metrics && a.metrics.rerollTokens) + '</b> · ' + cfmt(a.metrics && a.metrics.gems) + ' 💎</small></span>' +
         '<span class="dot"></span>' +
       '</button>'
     ).join('');
@@ -749,6 +781,7 @@ function filteredAccounts(){
   switch (state.sort) {
     case 'level': list.sort((a,b) => mv(b,'level') - mv(a,'level') || b.seen - a.seen); break;
     case 'gems': list.sort((a,b) => mv(b,'gems') - mv(a,'gems') || b.seen - a.seen); break;
+    case 'rerollTokens': list.sort((a,b) => mv(b,'rerollTokens') - mv(a,'rerollTokens') || b.seen - a.seen); break;
     case 'pearls': list.sort((a,b) => mv(b,'pearls') - mv(a,'pearls') || b.seen - a.seen); break;
     case 'items': list.sort((a,b) => mv(b,'itemKinds') - mv(a,'itemKinds') || b.seen - a.seen); break;
     case 'name': list.sort((a,b) => String(a.user).localeCompare(String(b.user))); break;
@@ -762,7 +795,7 @@ function renderTable(){
   $('#tableCaption').textContent = 'Đang hiện ' + list.length + ' / ' + accounts().length + ' account' +
     (state.query ? ' · tìm “' + state.query + '”' : '') + (state.pc !== 'all' ? ' · PC ' + state.pc : '');
   if (!list.length) {
-    $('#accountRows').innerHTML = '<tr><td colspan="9"><div class="empty"><b>Không có account phù hợp</b>Thử đổi bộ lọc hoặc từ khóa.</div></td></tr>';
+    $('#accountRows').innerHTML = '<tr><td colspan="10"><div class="empty"><b>Không có account phù hợp</b>Thử đổi bộ lọc hoặc từ khóa.</div></td></tr>';
     return;
   }
   $('#accountRows').innerHTML = list.map((a) => {
@@ -773,6 +806,7 @@ function renderTable(){
       '<td><span class="status ' + (a.online ? 'on' : '') + '"><i></i>' + (a.online ? 'Online' : 'Offline') + '<small>' + ago(a.seen) + '</small></span></td>' +
       '<td><b>Lv ' + cfmt(m.level) + '</b></td>' +
       '<td>' + cfmt(m.gems) + '</td>' +
+      '<td class="hot-cell">' + cfmt(m.rerollTokens) + '</td>' +
       '<td>' + cfmt(m.pearls) + '</td>' +
       '<td>' + fmt(m.itemKinds) + '</td>' +
       '<td>' + ago(a.seen) + '</td>' +
@@ -816,8 +850,9 @@ function renderDetailOverview(a){
   const strikes = a.zeroStrikes || {};
   const strikeCount = Object.values(strikes).filter((v) => num(v) > 0).length;
   const metricsHtml = METRIC_LABELS.map(([k,label,icon]) =>
-    '<div class="metric-box"><small>' + icon + ' ' + e(label) + '</small><b>' + cfmt(m[k]) + '</b></div>'
+    '<div class="metric-box' + (k === 'rerollTokens' ? ' hot' : '') + '"><small>' + icon + ' ' + e(label) + '</small><b>' + cfmt(m[k]) + '</b></div>'
   ).join('') +
+  '<div class="metric-box"><small>🍎 Loại fruit</small><b>' + fmt(m.fruitKinds) + '</b></div>' +
   '<div class="metric-box"><small>📦 Loại item</small><b>' + fmt(m.itemKinds) + '</b></div>' +
   '<div class="metric-box"><small>🔢 Tổng item</small><b>' + cfmt(m.itemTotal) + '</b></div>';
 
@@ -828,8 +863,10 @@ function renderDetailOverview(a){
   $('#detailBody').innerHTML =
     '<div class="detail-hero">' +
       '<div class="kv"><small>Level</small><b>Lv ' + cfmt(m.level) + '</b></div>' +
+      '<div class="kv hot"><small>🔁 Token Reroll</small><b>' + fmt(m.rerollTokens) + '</b></div>' +
       '<div class="kv"><small>Gems</small><b>' + fmt(m.gems) + '</b></div>' +
-      '<div class="kv"><small>Pearls</small><b>' + fmt(m.pearls) + '</b></div>' +
+      '<div class="kv"><small>Coins</small><b>' + fmt(m.gold) + '</b></div>' +
+      '<div class="kv"><small>Summer Token</small><b>' + fmt(m.pearls) + '</b></div>' +
       '<div class="kv"><small>Item kinds</small><b>' + fmt(m.itemKinds) + '</b></div>' +
       '<div class="kv"><small>Lần báo cáo</small><b>' + fmt(a.updates) + '</b></div>' +
     '</div>' +
@@ -896,15 +933,16 @@ function sparkline(values, color){
 
 function renderDetailHistory(a){
   const h = Array.isArray(a.history) ? a.history : [];
-  const lv = h.map((x) => x.level), gems = h.map((x) => x.gems);
+  const lv = h.map((x) => x.level), gems = h.map((x) => x.gems), tok = h.map((x) => x.rerollTokens);
   const rows = h.slice(-14).reverse().map((x) =>
-    '<tr><td>' + e(ago(x.t)) + '</td><td>' + e(x.ctx || '—') + '</td><td>Lv ' + cfmt(x.level) + '</td><td>' + cfmt(x.gems) + '</td><td>' + cfmt(x.pearls) + '</td><td>' + cfmt(x.star) + '</td><td>' + fmt(x.items) + '</td></tr>'
+    '<tr><td>' + e(ago(x.t)) + '</td><td>' + e(x.ctx || '—') + '</td><td>Lv ' + cfmt(x.level) + '</td><td>' + cfmt(x.gems) + '</td><td class="hot-cell">' + cfmt(x.rerollTokens) + '</td><td>' + cfmt(x.pearls) + '</td><td>' + cfmt(x.star) + '</td><td>' + fmt(x.items) + '</td></tr>'
   ).join('');
   $('#detailBody').innerHTML =
+    '<div class="spark-wrap"><h4>🔁 Xu hướng Token Reroll <span class="legend"><i style="background:#a78bfa"></i>Token Reroll</span></h4><div class="spark">' + sparkline(tok, '#a78bfa') + '</div></div>' +
     '<div class="spark-wrap"><h4>Xu hướng Level <span class="legend"><i style="background:#38bdf8"></i>Level</span></h4><div class="spark">' + sparkline(lv, '#38bdf8') + '</div></div>' +
     '<div class="spark-wrap"><h4>Xu hướng Gems <span class="legend"><i style="background:#a78bfa"></i>Gems</span></h4><div class="spark">' + sparkline(gems, '#a78bfa') + '</div></div>' +
-    '<div class="mini-panel"><h4>(' + h.length + ' mốc gần nhất)</h4><div class="table-wrap" style="max-height:320px"><table><thead><tr><th>Thời gian</th><th>Ngữ cảnh</th><th>Level</th><th>Gems</th><th>Pearls</th><th>Star</th><th>Items</th></tr></thead><tbody>' +
-      (rows || '<tr><td colspan="7"><div class="empty">Chưa có lịch sử.</div></td></tr>') + '</tbody></table></div></div>';
+    '<div class="mini-panel"><h4>(' + h.length + ' mốc gần nhất)</h4><div class="table-wrap" style="max-height:320px"><table><thead><tr><th>Thời gian</th><th>Ngữ cảnh</th><th>Level</th><th>Gems</th><th>🔁 Token</th><th>Pearls</th><th>Star</th><th>Items</th></tr></thead><tbody>' +
+      (rows || '<tr><td colspan="8"><div class="empty">Chưa có lịch sử.</div></td></tr>') + '</tbody></table></div></div>';
 }
 
 /* ------------------------------ setup / misc ------------------------------ */

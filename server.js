@@ -301,15 +301,19 @@ async function initDb() {
 /* metric definitions — dashboard and ingest share these               */
 /* ------------------------------------------------------------------ */
 
+// Thứ tự = độ ưu tiên hiển thị trên dashboard (theo yêu cầu).
 const METRICS = [
-  { key: 'level', label: 'Level', icon: '⭐', exact: ['Profile.Level', '_stats.level', '_stats.Level', 'Profile.level', 'Profile.player_level', 'Profile.level_data.level'], max: 5000 },
+  { key: 'fruits', label: 'Fruits', icon: '🍎', test: (k) => /fruit/i.test(k) },
+  { key: 'rerollTokens', label: 'Token Reroll', icon: '🔁',
+    exact: ['Profile.trait_reroll_tokens', 'trait_reroll_tokens'],
+    test: (k) => /trait[._-]?reroll[._-]?tokens?|reroll.*(token|ticket)|(token|ticket).*reroll/i.test(k) },
   { key: 'gems', label: 'Gems', icon: '💎', exact: ['Profile.gem_amount', '_stats.gem_amount', 'Profile.gems', '_stats.gems'] },
-  { key: 'gold', label: 'Gold', icon: '🪙', exact: ['Profile.gold_amount', '_stats.gold_amount', 'Profile.gold', '_stats.gold', 'Profile.coins'] },
-  { key: 'pearls', label: 'Summer Pearls', icon: '🦪', test: (k) => /pearl/i.test(k) && !/limited/i.test(k) },
-  { key: 'rerolls', label: 'Reroll', icon: '🎲', test: (k) => /^reroll_stat|reroll.*stat|^_stats\.reroll$/i.test(k) },
-  { key: 'rerollTokens', label: 'Token Reroll', icon: '🔁', test: (k) => /trait_reroll_tokens|reroll.*token|reroll.*ticket/i.test(k) },
-  { key: 'starRemnant', label: 'Star Remnant', icon: '✨', test: (k) => /star.*remnant/i.test(k) && !/limit/i.test(k) },
+  { key: 'level', label: 'Level', icon: '⭐', exact: ['Profile.Level', '_stats.level', '_stats.Level', 'Profile.level', 'Profile.player_level', 'Profile.level_data.level'], max: 5000 },
+  { key: 'gold', label: 'Coins', icon: '🪙', exact: ['Profile.gold_amount', '_stats.gold_amount', 'Profile.gold', '_stats.gold', 'Profile.coins'] },
+  { key: 'pearls', label: 'Summer Token', icon: '🦪', test: (k) => /pearl|summer.*(token|ticket)|(token|ticket).*summer/i.test(k) && !/limit/i.test(k) },
   { key: 'starRemnantLimited', label: 'Star Remnant (L)', icon: '🌟', test: (k) => /(limit.*star.*remnant|star.*remnant.*limit)/i.test(k) },
+  { key: 'starRemnant', label: 'Star Remnant', icon: '✨', test: (k) => /star.*remnant/i.test(k) && !/limit/i.test(k) },
+  { key: 'rerolls', label: 'Reroll', icon: '🎲', test: (k) => /^reroll_stat|reroll.*stat|^_stats\.reroll$/i.test(k) },
 ];
 
 function contextOf(place, meta) {
@@ -357,6 +361,7 @@ function computeMetrics(account) {
   const items = isObj(account.items) ? account.items : {};
   metrics.itemKinds = Object.keys(items).length;
   metrics.itemTotal = Object.values(items).reduce((sum, v) => sum + (isNum(v) ? v : 0), 0);
+  metrics.fruitKinds = Object.keys(items).filter((k) => /fruit/i.test(k)).length;
   metrics.values = Object.keys(isObj(account.flat) ? account.flat : {}).length;
   return { metrics, sources };
 }
@@ -434,6 +439,8 @@ function pushHistory(account, metrics, at) {
     t: at,
     level: metrics.level,
     gems: metrics.gems,
+    rerollTokens: metrics.rerollTokens,
+    fruits: metrics.fruits,
     pearls: metrics.pearls,
     star: metrics.starRemnant,
     starL: metrics.starRemnantLimited,
@@ -525,12 +532,13 @@ function serverUrlFrom(req) {
 }
 
 function aggregate(accounts) {
-  const out = { accounts: accounts.length, online: 0, pcs: {}, metrics: {}, itemKinds: 0 };
+  const out = { accounts: accounts.length, online: 0, pcs: {}, metrics: {}, itemKinds: 0, fruitKinds: 0 };
   for (const def of METRICS) out.metrics[def.key] = { total: 0, with: 0, max: 0 };
   for (const a of accounts) {
     if (a.online) out.online += 1;
     out.pcs[a.pc] = (out.pcs[a.pc] || 0) + 1;
     out.itemKinds += a.metrics.itemKinds || 0;
+    out.fruitKinds += a.metrics.fruitKinds || 0;
     for (const def of METRICS) {
       const v = a.metrics[def.key] || 0;
       const slot = out.metrics[def.key];
